@@ -50,12 +50,12 @@ services:
       langfuse-db:
         condition: service_healthy
     ports:
-      - "3000:3000"
+      - "3001:3000"
     environment:
       DATABASE_URL: postgresql://langfuse:langfuse_pass@langfuse-db:5432/langfuse
       NEXTAUTH_SECRET: mysecret
       SALT: mysalt
-      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_URL: http://localhost:3001
       TELEMETRY_ENABLED: "false"
       LANGFUSE_INIT_PROJECT_PUBLIC_KEY: lf-pub-local-key
       LANGFUSE_INIT_PROJECT_SECRET_KEY: lf-sec-local-key
@@ -63,12 +63,6 @@ services:
       LANGFUSE_INIT_USER_NAME: admin
       LANGFUSE_INIT_USER_PASSWORD: admin123
 
-volumes:
-  postgres_data:
-  chroma_data:
-  langfuse_pg:
-
-  # ── FastAPI Backend ────────────────────────────────────────────────────────
   api:
     image: python:3.11-slim
     container_name: cis-api
@@ -91,3 +85,8 @@ volumes:
     depends_on:
       postgres:
         condition: service_healthy
+
+volumes:
+  postgres_data:
+  chroma_data:
+  langfuse_pg:
