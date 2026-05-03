@@ -1,6 +1,7 @@
 """
 CIS AgentOps — Langfuse Tracer Wrapper
 Gracefully degrades to no-op logging if Langfuse is unreachable.
+Reads env vars lazily at first use (not at module import time).
 """
 from __future__ import annotations
 import os
@@ -9,31 +10,24 @@ import logging
 
 log = logging.getLogger(__name__)
 
-LANGFUSE_HOST = os.getenv("LANGFUSE_HOST", "http://localhost:3000")
-LANGFUSE_PUBLIC_KEY = os.getenv("LANGFUSE_PUBLIC_KEY", "lf-pub-local-key")
-LANGFUSE_SECRET_KEY = os.getenv("LANGFUSE_SECRET_KEY", "lf-sec-local-key")
-
-
-class _NoopTracer:
-    """Used when Langfuse is unreachable."""
-    def create_trace(self, **kwargs): return str(uuid.uuid4())
-    def start_span(self, **kwargs): return str(uuid.uuid4())
-    def end_span(self, span_id, **kwargs): pass
-    def finalize_trace(self, trace_id, **kwargs): pass
-
 
 class LangfuseTracer:
     def __init__(self):
+        host   = os.getenv("LANGFUSE_HOST", "http://localhost:3000")
+        pub_key = os.getenv("LANGFUSE_PUBLIC_KEY", "lf-pub-local-key")
+        sec_key = os.getenv("LANGFUSE_SECRET_KEY", "lf-sec-local-key")
+
         try:
             from langfuse import Langfuse
             self._lf = Langfuse(
-                public_key=LANGFUSE_PUBLIC_KEY,
-                secret_key=LANGFUSE_SECRET_KEY,
-                host=LANGFUSE_HOST,
+                public_key=pub_key,
+                secret_key=sec_key,
+                host=host,
             )
-            self._traces = {}   # trace_id → langfuse trace object
-            self._spans = {}    # span_id → langfuse span object
+            self._traces = {}
+            self._spans  = {}
             self._available = True
+            log.info(f"Langfuse connected: {host}")
         except Exception as e:
             log.warning(f"Langfuse unavailable ({e}), using no-op tracer")
             self._available = False
@@ -65,7 +59,10 @@ class LangfuseTracer:
     def finalize_trace(self, trace_id: str, output: dict = None):
         if not self._available:
             return
-        self._lf.flush()
+        try:
+            self._lf.flush()
+        except Exception as e:
+            log.warning(f"Langfuse flush error: {e}")
 
 
 _tracer_instance = None
