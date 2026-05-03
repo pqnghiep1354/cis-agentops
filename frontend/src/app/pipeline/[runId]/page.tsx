@@ -205,33 +205,25 @@ export default function PipelinePage() {
   const [currentNode, setCurrentNode] = useState<string | null>(null);
   const esRef = useRef<EventSource | null>(null);
 
-  // Polling-based run status (SSE not supported via ngrok proxy)
+  // Polling every 2s — works with ngrok proxy
   useEffect(() => {
     if (!runId) return;
 
-    // Initial fetch immediately
-    api.getRun(runId).then(r => {
-      setRun(r);
-      if (r.status === "complete" && r.result?.stage_timings) {
-        setNodeTimings(r.result.stage_timings);
-      }
-    }).catch(() => {});
-
-    // Poll every 2s until complete/error
-    const poll = setInterval(() => {
+    function fetchRun() {
       api.getRun(runId).then(r => {
         setRun(r);
         if (r.status === "complete" || r.status === "error") {
-          clearInterval(poll);
           setCurrentNode(null);
           if (r.result?.stage_timings) setNodeTimings(r.result.stage_timings);
-        } else if (r.status === "running") {
-          setCurrentNode("generate"); // show activity
+        } else {
+          setCurrentNode("generate");
         }
       }).catch(() => {});
-    }, 2000);
+    }
 
-    return () => { clearInterval(poll); };
+    fetchRun(); // immediate
+    const poll = setInterval(fetchRun, 2000);
+    return () => clearInterval(poll);
   }, [runId]);
 
   // Determine effective node statuses
