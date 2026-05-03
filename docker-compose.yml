@@ -75,8 +75,6 @@ services:
       DATABASE_URL: postgresql://cis:cis_local_pass@postgres:5432/cis_local
       CHROMA_HOST: chromadb
       CHROMA_PORT: "8000"
-      LANGFUSE_HOST: http://langfuse:3000
-      MOCK_SEO: "false"
     env_file:
       - .env
     command: >
