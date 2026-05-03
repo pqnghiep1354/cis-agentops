@@ -181,6 +181,14 @@ def _run_pipeline_sync(run_id: str, tour_input: dict):
         _runs[run_id].update({"status": "complete", "result": result})
         _emit(run_id, "complete", result)
 
+        # Flush Langfuse traces from this thread
+        try:
+            from observability.tracer import get_tracer
+            get_tracer().finalize_trace(run_id, output={"quality_score": vr.get("quality_score"), "cost": final.get("total_cost_usd")})
+            print(f"[API] Langfuse flushed for run {run_id[:8]}", flush=True)
+        except Exception as lf_err:
+            print(f"[API] Langfuse flush error: {lf_err}", flush=True)
+
     except Exception as e:
         tb = traceback.format_exc()
         _runs[run_id].update({"status": "error", "error": str(e)})
