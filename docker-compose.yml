@@ -1,0 +1,93 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: cis-postgres
+    environment:
+      POSTGRES_DB: cis_local
+      POSTGRES_USER: cis
+      POSTGRES_PASSWORD: cis_local_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./seeds/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cis -d cis_local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  chromadb:
+    image: chromadb/chroma:0.5.0
+    container_name: cis-chroma
+    ports:
+      - "8000:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    environment:
+      ALLOW_RESET: "true"
+
+  langfuse-db:
+    image: postgres:15-alpine
+    container_name: cis-langfuse-db
+    environment:
+      POSTGRES_DB: langfuse
+      POSTGRES_USER: langfuse
+      POSTGRES_PASSWORD: langfuse_pass
+    volumes:
+      - langfuse_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U langfuse"]
+      interval: 5s
+      retries: 5
+
+  langfuse:
+    image: langfuse/langfuse:2
+    container_name: cis-langfuse
+    depends_on:
+      langfuse-db:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://langfuse:langfuse_pass@langfuse-db:5432/langfuse
+      NEXTAUTH_SECRET: mysecret
+      SALT: mysalt
+      NEXTAUTH_URL: http://localhost:3000
+      TELEMETRY_ENABLED: "false"
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: lf-pub-local-key
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: lf-sec-local-key
+      LANGFUSE_INIT_USER_EMAIL: admin@cis.local
+      LANGFUSE_INIT_USER_NAME: admin
+      LANGFUSE_INIT_USER_PASSWORD: admin123
+
+volumes:
+  postgres_data:
+  chroma_data:
+  langfuse_pg:
+
+  # ── FastAPI Backend ────────────────────────────────────────────────────────
+  api:
+    image: python:3.11-slim
+    container_name: cis-api
+    working_dir: /app
+    volumes:
+      - .:/app
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgresql://cis:cis_local_pass@postgres:5432/cis_local
+      CHROMA_HOST: chromadb
+      CHROMA_PORT: "8000"
+      LANGFUSE_HOST: http://langfuse:3000
+      MOCK_SEO: "false"
+    env_file:
+      - .env
+    command: >
+      sh -c "pip install -r requirements.txt -r api/requirements.txt -q &&
+             uvicorn api.main:app --host 0.0.0.0 --port 8080 --reload"
+    depends_on:
+      postgres:
+        condition: service_healthy

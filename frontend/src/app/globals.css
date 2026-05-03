@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --gold: #DB9628;
+  --ink:  #1F2933;
+  --mist: #F8F6F2;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar        { width: 6px; height: 6px; }
+::-webkit-scrollbar-track  { background: #1F2933; }
+::-webkit-scrollbar-thumb  { background: #DB9628; border-radius: 3px; }
+
+/* Selection */
+::selection { background: rgba(219,150,40,0.3); color: #F8F6F2; }
+
+/* Grid texture overlay */
+.grid-texture {
+  background-image: radial-gradient(circle, rgba(51,54,61,0.6) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* Gold shimmer for loading */
+.shimmer {
+  background: linear-gradient(90deg, transparent 0%, rgba(219,150,40,0.15) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Glass card */
+.glass {
+  background: rgba(45, 55, 72, 0.4);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(219,150,40,0.12);
+}
+
+/* Node status colours */
+.node-pending   { border-color: rgba(255,255,255,0.1); color: #6b7280; }
+.node-running   { border-color: #DB9628; color: #DB9628; }
+.node-complete  { border-color: #22c55e; color: #22c55e; }
+.node-error     { border-color: #ef4444; color: #ef4444; }
+.node-hitl      { border-color: #f59e0b; color: #f59e0b; }
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+}

@@ -1,0 +1,38 @@
+# CIS AgentOps — Requirements
+# pip install -r requirements.txt
+
+# ── Core agent framework ────────────────────────────────────────────────────
+langgraph>=0.2.0
+langgraph-checkpoint-sqlite>=2.0.0
+langchain-core>=0.3.0
+
+# ── LLM providers ──────────────────────────────────────────────────────────
+anthropic>=0.40.0
+openai>=1.50.0
+
+# ── Database ────────────────────────────────────────────────────────────────
+psycopg2-binary>=2.9.0
+sqlalchemy>=2.0.0
+
+# ── Vector DB ───────────────────────────────────────────────────────────────
+chromadb>=0.5.0
+
+# ── Observability ───────────────────────────────────────────────────────────
+langfuse>=2.0.0
+
+# ── RAG reranking (optional — graceful fallback to distance-based) ──────────
+sentence-transformers>=3.0.0
+
+# ── Data & validation ───────────────────────────────────────────────────────
+pydantic>=2.0.0
+openpyxl>=3.1.0
+pandas>=2.0.0
+
+# ── Utils ───────────────────────────────────────────────────────────────────
+python-dotenv>=1.0.0
+requests>=2.31.0
+
+# ── Notebook & visualisation ────────────────────────────────────────────────
+jupyter>=1.0.0
+matplotlib>=3.8.0
+ipywidgets>=8.0.0

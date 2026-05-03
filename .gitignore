@@ -1,0 +1,41 @@
+# Environment — NEVER commit
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# LangGraph checkpoints
+.checkpoints.db
+
+# Eval results (large JSON)
+eval/results/
+
+# Jupyter
+.ipynb_checkpoints/
+notebooks/.ipynb_checkpoints/
+
+# Virtualenv
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker volumes (local only)
+postgres_data/
+chroma_data/
