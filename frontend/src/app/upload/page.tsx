@@ -2,7 +2,7 @@
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useDropzone } from "react-dropzone";
-import { Upload, FileSpreadsheet, CheckCircle, XCircle, AlertCircle, ArrowRight, Loader2 } from "lucide-react";
+import { Upload, FileSpreadsheet, CheckCircle, XCircle, AlertCircle, ArrowRight, Loader2, Zap } from "lucide-react";
 import { api, UploadResult, TourRunPayload } from "@/lib/api";
 import { PageShell, PageHeader, Card, Badge } from "@/components/ui";
 import clsx from "clsx";
