@@ -230,10 +230,11 @@ export default function PipelinePage() {
   const effectiveStatus = (nodeId: string): NodeStatus => {
     if (nodeStatus[nodeId]) return nodeStatus[nodeId];
     if (run?.status === "complete") {
-      // Mark all non-hitl nodes as complete if not explicitly set
-      if (nodeId !== "hitl") return "complete";
-      return "skipped";
+      if (nodeId === "hitl") return "skipped";
+      return "complete";
     }
+    if (run?.status === "running") return "pending";
+    if (run?.status === "error") return "error";
     return "pending";
   };
 
