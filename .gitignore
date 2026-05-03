@@ -39,3 +39,8 @@ Thumbs.db
 # Docker volumes (local only)
 postgres_data/
 chroma_data/
+.checkpoints.db-shm
+.checkpoints.db-wal
+data/
+frontend/node_modules/
+frontend/package-lock.json
