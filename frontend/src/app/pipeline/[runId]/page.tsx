@@ -205,66 +205,33 @@ export default function PipelinePage() {
   const [currentNode, setCurrentNode] = useState<string | null>(null);
   const esRef = useRef<EventSource | null>(null);
 
-  // SSE connection
+  // Polling-based run status (SSE not supported via ngrok proxy)
   useEffect(() => {
     if (!runId) return;
 
-    // Initial fetch
-    api.getRun(runId).then(setRun).catch(() => {});
-
-    const es = new EventSource(`/api/run/${runId}/stream`);
-    esRef.current = es;
-
-    es.addEventListener("started", (e) => {
-      const d = JSON.parse(e.data);
-      setEvents(prev => [...prev, `Pipeline started: ${d.tour}`]);
-      setCurrentNode("ingestion");
-      setNodeStatus(prev => ({ ...prev, ingestion: "running" }));
-    });
-
-    es.addEventListener("node_complete", (e) => {
-      const d = JSON.parse(e.data);
-      const node = d.node;
-      setNodeStatus(prev => ({ ...prev, [node]: "complete" }));
-      if (d.timings) {
-        setNodeTimings(prev => ({ ...prev, ...d.timings }));
+    // Initial fetch immediately
+    api.getRun(runId).then(r => {
+      setRun(r);
+      if (r.status === "complete" && r.result?.stage_timings) {
+        setNodeTimings(r.result.stage_timings);
       }
-      setEvents(prev => [...prev, `✓ ${node} complete`]);
-      // Set next node as running
-      const idx = NODES.findIndex(n => n.id === node);
-      if (idx >= 0 && idx < NODES.length - 1) {
-        const nextNode = NODES[idx + 1].id;
-        setCurrentNode(nextNode);
-        setNodeStatus(prev => ({ ...prev, [nextNode]: "running" }));
-      }
-    });
+    }).catch(() => {});
 
-    es.addEventListener("complete", (e) => {
-      const d = JSON.parse(e.data);
-      setRun(prev => prev ? { ...prev, status: "complete", result: d } : null);
-      setCurrentNode(null);
-      api.getRun(runId).then(setRun).catch(() => {});
-    });
-
-    es.addEventListener("error", (e) => {
-      try {
-        const d = JSON.parse((e as MessageEvent).data);
-        setEvents(prev => [...prev, `Error: ${d.error}`]);
-      } catch {}
-      setRun(prev => prev ? { ...prev, status: "error" } : null);
-    });
-
-    es.addEventListener("done", () => { es.close(); });
-
-    // Fallback polling if SSE isn't updating
+    // Poll every 2s until complete/error
     const poll = setInterval(() => {
       api.getRun(runId).then(r => {
         setRun(r);
-        if (r.status === "complete" || r.status === "error") clearInterval(poll);
+        if (r.status === "complete" || r.status === "error") {
+          clearInterval(poll);
+          setCurrentNode(null);
+          if (r.result?.stage_timings) setNodeTimings(r.result.stage_timings);
+        } else if (r.status === "running") {
+          setCurrentNode("generate"); // show activity
+        }
       }).catch(() => {});
-    }, 3000);
+    }, 2000);
 
-    return () => { es.close(); clearInterval(poll); };
+    return () => { clearInterval(poll); };
   }, [runId]);
 
   // Determine effective node statuses
