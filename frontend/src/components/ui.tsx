@@ -82,10 +82,11 @@ export function PageHeader({ title, sub }: { title: string; sub?: string }) {
 }
 
 export function Card({
-  children, className, gold,
-}: { children: React.ReactNode; className?: string; gold?: boolean }) {
+  children, className, gold, onClick,
+}: { children: React.ReactNode; className?: string; gold?: boolean; onClick?: () => void }) {
   return (
     <div
+      onClick={onClick}
       className={clsx(
         "rounded-xl border p-5",
         gold
