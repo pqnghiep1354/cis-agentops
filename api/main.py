@@ -94,59 +94,14 @@ def _run_pipeline_sync(run_id: str, tour_input: dict):
     """Runs in a thread via asyncio.to_thread."""
     try:
         from agent.graph import run_pipeline
-        from observability.tracer import get_tracer
 
         _runs[run_id]["status"] = "running"
         _emit(run_id, "started", {"tour": tour_input.get("tour_name"), "run_id": run_id})
 
-        # Monkey-patch stage emit into tracer
-        # We capture stage transitions by wrapping the graph
-        class _PatchedGraph:
-            def __init__(self, graph):
-                self._g = graph
+        # Use run_pipeline() which handles tracer internally
+        final = run_pipeline(tour_input, thread_id=run_id)
 
-            def invoke(self, state, config):
-                return self._g.invoke(state, config)
-
-        # Run with event callbacks via LangGraph streaming
-        from agent.graph import build_graph
-        graph = build_graph()
-
-        import sqlite3
-        from langgraph.checkpoint.sqlite import SqliteSaver
-
-        initial = {
-            "tour_input": tour_input,
-            "seo_context": None,
-            "rag_context": None,
-            "generated_content": None,
-            "validation_result": None,
-            "regeneration_count": 0,
-            "hitl_approved": None,
-            "export_id": None,
-            "trace_id": run_id,
-            "stage_timings": {},
-            "total_cost_usd": 0.0,
-            "messages": [],
-        }
-
-        config = {"configurable": {"thread_id": run_id}}
-
-        # Stream events from LangGraph
-        for chunk in graph.stream(initial, config=config, stream_mode="updates"):
-            for node_name, node_output in chunk.items():
-                if node_name == "__end__":
-                    continue
-                _emit(run_id, "node_complete", {
-                    "node": node_name,
-                    "timings": node_output.get("stage_timings", {}),
-                    "cost": node_output.get("total_cost_usd", 0),
-                })
-
-        # Get final state
-        final = graph.get_state(config).values
-
-        # Build summary
+        # Build summary from run_pipeline() result
         gc = final.get("generated_content") or {}
         vr = final.get("validation_result") or {}
         result = {
@@ -180,14 +135,7 @@ def _run_pipeline_sync(run_id: str, tour_input: dict):
 
         _runs[run_id].update({"status": "complete", "result": result})
         _emit(run_id, "complete", result)
-
-        # Flush Langfuse traces from this thread
-        try:
-            from observability.tracer import get_tracer
-            get_tracer().finalize_trace(run_id, output={"quality_score": vr.get("quality_score"), "cost": final.get("total_cost_usd")})
-            print(f"[API] Langfuse flushed for run {run_id[:8]}", flush=True)
-        except Exception as lf_err:
-            print(f"[API] Langfuse flush error: {lf_err}", flush=True)
+        print(f"[API] Pipeline complete for run {run_id[:8]}", flush=True)
 
     except Exception as e:
         tb = traceback.format_exc()
