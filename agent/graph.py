@@ -127,10 +127,14 @@ def run_pipeline(tour_input: dict, thread_id: str = None) -> CISState:
     tracer = get_tracer()
 
     thread_id = thread_id or str(uuid.uuid4())
-    trace_id = tracer.create_trace(
+    # Pass thread_id as trace_id so API run_id == langfuse trace_id
+    trace_id = thread_id
+    tracer.create_trace_with_id(
+        trace_id=trace_id,
         name="cis-pipeline",
         metadata={"tour": tour_input.get("tour_name"), "thread": thread_id}
     )
+    print(f"[Graph] trace_id={trace_id[:8]}", flush=True)
 
     initial_state: CISState = {
         "tour_input": tour_input,

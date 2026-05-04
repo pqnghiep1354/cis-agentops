@@ -42,14 +42,18 @@ class LangfuseTracer:
 
     def create_trace(self, name: str, metadata: dict = None) -> str:
         tid = str(uuid.uuid4())
+        return self.create_trace_with_id(tid, name, metadata)
+
+    def create_trace_with_id(self, trace_id: str, name: str, metadata: dict = None) -> str:
         if not self._lf:
-            return tid
+            return trace_id
         try:
-            trace = self._lf.trace(name=name, id=tid, metadata=metadata or {})
-            self._traces[tid] = trace
+            trace = self._lf.trace(name=name, id=trace_id, metadata=metadata or {})
+            self._traces[trace_id] = trace
+            print(f"[Langfuse] trace created: {trace_id[:8]} name={name}", flush=True)
         except Exception as e:
             print(f"[Langfuse] create_trace error: {e}", flush=True)
-        return tid
+        return trace_id
 
     def start_span(self, trace_id: str, name: str, input: dict = None) -> str:
         sid = str(uuid.uuid4())
