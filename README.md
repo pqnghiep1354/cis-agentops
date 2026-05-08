@@ -1,4 +1,4 @@
-# CIS AgentOps — Adventure Asia
+# CIS AgentOps
 
 > **Content Intelligence System** · Advanced AgentOps Capstone 2026  
 > Live demo: **[cis-agentops.vercel.app](https://cis-agentops.vercel.app)**  
